@@ -1,4 +1,4 @@
-# app.py - Versão final futurista com caminhos ajustados
+# app.py - Versão unificada para evitar erros de arquivo
 
 import streamlit as st
 import pandas as pd
@@ -6,12 +6,15 @@ import joblib
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from imblearn.over_sampling import SMOTE
+import os
 
 # ====================================================================
 # Configurações da página e CSS customizado
 # ====================================================================
-
 st.set_page_config(
     page_title="TelecomX",
     page_icon="📡",
@@ -91,28 +94,50 @@ st.markdown("""
 
 
 # ====================================================================
-# Constantes e Carregamento de Recursos
+# Funções de Treinamento e Carregamento de Recursos
 # ====================================================================
-CHURN_COLORS = {'0': "#1f78b4", '1': "#8b0eff"}
-PLOTLY_CMAP = 'Cividis'
-
+def train_and_save_model():
+    """Treina o modelo e salva os arquivos necessários."""
+    st.info("Arquivos do modelo não encontrados. Treinando o modelo agora...", icon="🔄")
+    
+    df = pd.read_csv('dados_tratados.csv')
+    df = df.dropna(subset=['Churn'])
+    df = df.drop(columns=['customerID', 'Contas_Diarias'])
+    
+    # Pré-processamento
+    df_encoded = pd.get_dummies(df, drop_first=True)
+    X = df_encoded.drop('Churn', axis=1)
+    y = df_encoded['Churn']
+    
+    # Balanceamento e Padronização
+    smote = SMOTE(random_state=42)
+    X_resampled, y_resampled = smote.fit_resample(X, y)
+    scaler = StandardScaler()
+    colunas_numericas = ['customer_tenure', 'account_Charges.Monthly', 'account_Charges.Total']
+    X_resampled[colunas_numericas] = scaler.fit_transform(X_resampled[colunas_numericas])
+    
+    # Treinamento
+    random_forest = RandomForestClassifier(n_estimators=100, random_state=42)
+    random_forest.fit(X_resampled, y_resampled)
+    
+    # Salvando os arquivos
+    joblib.dump(random_forest, 'random_forest_model.pkl')
+    joblib.dump(scaler, 'scaler.pkl')
+    joblib.dump(X_resampled.columns.tolist(), 'feature_columns.pkl')
+    st.success("Modelo treinado e arquivos salvos com sucesso!", icon="✅")
+    
 @st.cache_data
 def load_data():
     """Carrega e pré-processa os dados para os gráficos."""
     try:
-        # Caminho ajustado para o mesmo diretório
         df = pd.read_csv('dados_tratados.csv')
         df = df.dropna(subset=['Churn'])
         df = df.drop(columns=['customerID', 'Contas_Diarias'])
-        
-        # Correção: Converter para int e depois para str para evitar o '0.0'
         df['Churn'] = df['Churn'].astype(int).astype(str)
-        
         churn_column = df['Churn']
         df_to_encode = df.drop(columns=['Churn'])
         df_encoded = pd.get_dummies(df_to_encode, drop_first=True)
         df_encoded['Churn'] = churn_column.values
-
         return df, df_encoded
     except FileNotFoundError:
         st.error("Erro: O arquivo 'dados_tratados.csv' não foi encontrado. Certifique-se de que ele está no diretório correto.")
@@ -120,19 +145,33 @@ def load_data():
 
 @st.cache_resource
 def load_model_resources():
-    """Carrega os recursos do modelo salvos em arquivos .pkl."""
+    """Carrega os recursos do modelo. Se não existirem, os treina e salva primeiro."""
+    if not os.path.exists('random_forest_model.pkl'):
+        train_and_save_model()
+    
     try:
-        # Caminho ajustado para o mesmo diretório
         model = joblib.load('random_forest_model.pkl')
         scaler = joblib.load('scaler.pkl')
         feature_columns = joblib.load('feature_columns.pkl')
         return model, scaler, feature_columns
     except FileNotFoundError:
-        st.error("Erro: Arquivos do modelo (.pkl) não foram encontrados. Por favor, treine o modelo e salve-o primeiro no seu notebook.")
+        st.error("Erro fatal: Não foi possível carregar os arquivos do modelo mesmo após o treinamento.")
         return None, None, None
+
+# ====================================================================
+# Constantes e Carregamento de Recursos
+# ====================================================================
+CHURN_COLORS = {'0': "#1f78b4", '1': "#8b0eff"}
+PLOTLY_CMAP = 'Cividis'
 
 df_raw, df_encoded = load_data()
 model, scaler, feature_columns = load_model_resources()
+
+if df_raw is None or df_encoded is None:
+    st.stop()
+if model is None or scaler is None or feature_columns is None:
+    st.stop()
+
 
 # ====================================================================
 # Layout da Aplicação Streamlit
@@ -344,6 +383,3 @@ if model and scaler and feature_columns:
                 st.error(f'ALERTA: Este cliente tem alta probabilidade de evasão! Probabilidade: **{churn_prob:.2f}**')
             else:
                 st.success(f'RELATÓRIO: Este cliente tem baixa probabilidade de evasão. Probabilidade: **{churn_prob:.2f}**')
-
-else:
-    st.warning("Não foi possível carregar os recursos necessários. Verifique se os arquivos `.pkl` existem.")
