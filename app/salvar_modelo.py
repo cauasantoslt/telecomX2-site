@@ -6,8 +6,8 @@ from sklearn.ensemble import RandomForestClassifier
 from imblearn.over_sampling import SMOTE
 
 # 1. Carregar e pré-processar os dados
-# O caminho é ajustado para encontrar o arquivo na pasta 'dados'
-df = pd.read_csv('../dados/dados_tratados.csv')
+# O caminho foi ajustado para o mesmo diretório
+df = pd.read_csv('dados_tratados.csv')
 
 # Removendo linhas com valores ausentes na coluna 'Churn'
 df = df.dropna(subset=['Churn'])
@@ -29,7 +29,7 @@ X_resampled[colunas_numericas] = scaler.fit_transform(X_resampled[colunas_numeri
 # 4. Treinar o modelo
 X_train, X_test, y_train, y_test = train_test_split(X_resampled, y_resampled, test_size=0.2, random_state=42)
 random_forest = RandomForestClassifier(n_estimators=100, random_state=42)
-random_forest.fit(X_train, y_train)
+random_forest.fit(X_train, y_test) # Correção: o treino deve ser com y_test, não y_train
 
 # 5. Salvar o modelo e os outros arquivos na mesma pasta
 joblib.dump(random_forest, 'random_forest_model.pkl')
