@@ -9,7 +9,7 @@ from imblearn.over_sampling import SMOTE
 # O caminho é ajustado para encontrar o arquivo na pasta 'dados'
 df = pd.read_csv('../dados/dados_tratados.csv')
 
-# NOVO PASSO: Removendo linhas com valores ausentes na coluna 'Churn'
+# Removendo linhas com valores ausentes na coluna 'Churn'
 df = df.dropna(subset=['Churn'])
 
 df = df.drop(columns=['customerID', 'Contas_Diarias'])
@@ -31,7 +31,7 @@ X_train, X_test, y_train, y_test = train_test_split(X_resampled, y_resampled, te
 random_forest = RandomForestClassifier(n_estimators=100, random_state=42)
 random_forest.fit(X_train, y_train)
 
-# 5. Salvar o modelo e os outros arquivos
+# 5. Salvar o modelo e os outros arquivos na mesma pasta
 joblib.dump(random_forest, 'random_forest_model.pkl')
 joblib.dump(scaler, 'scaler.pkl')
 joblib.dump(X_resampled.columns.tolist(), 'feature_columns.pkl')
