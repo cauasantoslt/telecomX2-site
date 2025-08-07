@@ -1,4 +1,4 @@
-# app.py - Versão futurista
+# app.py - Versão final futurista com caminhos ajustados
 
 import streamlit as st
 import pandas as pd
@@ -100,7 +100,8 @@ PLOTLY_CMAP = 'Cividis'
 def load_data():
     """Carrega e pré-processa os dados para os gráficos."""
     try:
-        df = pd.read_csv('../dados/dados_tratados.csv')
+        # Caminho ajustado para o mesmo diretório
+        df = pd.read_csv('dados_tratados.csv')
         df = df.dropna(subset=['Churn'])
         df = df.drop(columns=['customerID', 'Contas_Diarias'])
         
@@ -121,6 +122,7 @@ def load_data():
 def load_model_resources():
     """Carrega os recursos do modelo salvos em arquivos .pkl."""
     try:
+        # Caminho ajustado para o mesmo diretório
         model = joblib.load('random_forest_model.pkl')
         scaler = joblib.load('scaler.pkl')
         feature_columns = joblib.load('feature_columns.pkl')
@@ -229,10 +231,10 @@ if model and df_encoded is not None:
     }).sort_values(by='Importância', ascending=False).head(10)
 
     fig_imp = px.bar(importance_df,
-                     x='Importância',
-                     y='Variável',
-                     title='Top 10 Variáveis Mais Influentes',
-                     color_discrete_sequence=px.colors.qualitative.Pastel)
+                      x='Importância',
+                      y='Variável',
+                      title='Top 10 Variáveis Mais Influentes',
+                      color_discrete_sequence=px.colors.qualitative.Pastel)
     fig_imp.update_layout(plot_bgcolor="#09000e", paper_bgcolor="#09000e", font_color='#e0e0ff',
                           title_font_family="Orbitron", title_font_color="#00ffff")
     fig_imp.update_xaxes(showgrid=False, title_text="Impacto na Previsão")
@@ -258,36 +260,36 @@ if df_raw is not None:
 
     with tab1:
         fig_tenure = px.box(df_raw,
-                            x='Churn',
-                            y='customer_tenure',
-                            color='Churn',
-                            color_discrete_map=CHURN_COLORS,
-                            title='Distribuição de Tempo de Contrato por Evasão')
+                              x='Churn',
+                              y='customer_tenure',
+                              color='Churn',
+                              color_discrete_map=CHURN_COLORS,
+                              title='Distribuição de Tempo de Contrato por Evasão')
         fig_tenure.update_layout(plot_bgcolor='#09000e', paper_bgcolor='#09000e', font_color='#e0e0ff',
                                   title_font_family="Orbitron", title_font_color="#00ffff")
         st.plotly_chart(fig_tenure, use_container_width=True)
 
     with tab2:
         fig_total_charges = px.box(df_raw,
-                                   x='Churn',
-                                   y='account_Charges.Total',
-                                   color='Churn',
-                                   color_discrete_map=CHURN_COLORS,
-                                   title='Distribuição de Gasto Total por Evasão')
+                                     x='Churn',
+                                     y='account_Charges.Total',
+                                     color='Churn',
+                                     color_discrete_map=CHURN_COLORS,
+                                     title='Distribuição de Gasto Total por Evasão')
         fig_total_charges.update_layout(plot_bgcolor='#09000e', paper_bgcolor='#09000e', font_color='#e0e0ff',
-                                        title_font_family="Orbitron", title_font_color="#00ffff")
+                                         title_font_family="Orbitron", title_font_color="#00ffff")
         st.plotly_chart(fig_total_charges, use_container_width=True)
 
     with tab3:
         corr_matrix = df_encoded.corr()
         fig_corr = px.imshow(corr_matrix,
-                             labels=dict(x="Variáveis", y="Variáveis", color="Correlação"),
-                             x=corr_matrix.columns,
-                             y=corr_matrix.columns,
-                             color_continuous_scale=PLOTLY_CMAP,
-                             title='Matriz de Correlação Interativa')
+                              labels=dict(x="Variáveis", y="Variáveis", color="Correlação"),
+                              x=corr_matrix.columns,
+                              y=corr_matrix.columns,
+                              color_continuous_scale=PLOTLY_CMAP,
+                              title='Matriz de Correlação Interativa')
         fig_corr.update_layout(plot_bgcolor='#09000e', paper_bgcolor='#09000e', font_color='#e0e0ff',
-                                title_font_family="Orbitron", title_font_color="#00ffff")
+                                 title_font_family="Orbitron", title_font_color="#00ffff")
         st.plotly_chart(fig_corr, use_container_width=True)
 
 st.markdown("---")
